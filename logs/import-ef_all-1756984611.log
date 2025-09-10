@@ -1,0 +1,14 @@
+→ Création staging: public.staging_import_1756984611 (dépend de l'en-tête du CSV)
+SET
+CREATE TABLE
+ALTER TABLE
+COPY 222387
+→ UPSERT (session unique READ WRITE + triggers off/on)
+SET
+SET
+BEGIN
+ALTER TABLE
+UPDATE 0
+ERROR:  relation "dedup" does not exist
+LINE 37: FROM dedup d;
+              ^

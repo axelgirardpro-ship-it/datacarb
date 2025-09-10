@@ -177,8 +177,8 @@ useEffect(() => {
 **Diagnostic**
 ```javascript
 // Monitorer les requêtes via les DevTools Network
-// Ou via les logs Supabase
-supabase functions logs algolia-search-proxy --follow
+// (Legacy) Ou via les logs Supabase de l’edge function algolia-search-proxy
+// supabase functions logs algolia-search-proxy --follow
 ```
 
 **Causes possibles**
@@ -284,10 +284,10 @@ const hasAccess = permissions.assignedSources.includes(hit.Source);
 3. Utilisez des requêtes spécifiques plutôt que génériques
 4. Implémentez un debounce sur les requêtes
 
-### Q5 : Que faire en cas d'erreur 500 de la edge function ?
+### Q5 : Que faire en cas d'erreur 500 de la edge function ? (legacy)
 
 **R :** 
-1. Vérifiez les logs : `supabase functions logs algolia-search-proxy`
+1. Vérifiez les logs : `supabase functions logs algolia-search-proxy` (si encore utilisée)
 2. Vérifiez la connectivité Algolia
 3. Vérifiez les permissions Supabase
 4. Contactez l'équipe technique si le problème persiste

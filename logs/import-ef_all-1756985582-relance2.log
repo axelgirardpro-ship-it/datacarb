@@ -1,0 +1,16 @@
+→ Reprise avec staging existante: public.staging_import_1756984611
+→ Skip création/COPY (staging existante)
+→ UPSERT (session unique READ WRITE + triggers off/on)
+SET
+SET
+BEGIN
+ALTER TABLE
+NOTICE:  table "temp_full_prepared" does not exist, skipping
+DROP TABLE
+SELECT 222387
+NOTICE:  table "temp_dedup" does not exist, skipping
+DROP TABLE
+SELECT 170645
+UPDATE 0
+ERROR:  null value in column "Secteur" of relation "emission_factors" violates not-null constraint
+DETAIL:  Failing row contains (9d294a4b-d0f8-42c0-9051-d8365da06cf3, null,  Natural Gas , [Source](https://www.epa.gov/climateleadership/scope-3-inventory..., 0.05449534, ft³, EPA, null, null, États-Unis, 2021, null, null, 2025-09-04 11:33:02.528947+00, 2025-09-04 11:33:02.528947+00, null, null, null,  natural gas |ft³|epa||états-unis|global|fr, cfc5616e-586a-46cd-a206-b92d22fa09ca, 2025-09-04 11:33:02.528947+00, null, t, fr, null, Energy, [Source](https://www.epa.gov/climateleadership/scope-3-inventory..., EPA's GHG emission factors hub, null, null, null, United States, null).

@@ -33,7 +33,7 @@ const Import = () => {
 
   const downloadTemplate = () => {
     const headers = [
-      'id','nom','nom_en','description','description_en','fe','unite','unite_en','source','secteur','secteur_en','categorie','categorie_en','localisation','localisation_en','date','incertitude','perimetre','perimetre_en','contributeur','commentaires','commentaires_en'
+      'ID','Nom','Nom_en','Description','Description_en','FE',"Unité donnée d'activité",'Unite_en','Source','Secteur','Secteur_en','Sous-secteur','Sous-secteur_en','Localisation','Localisation_en','Date','Incertitude','Périmètre','Périmètre_en','Contributeur','Commentaires','Commentaires_en'
     ];
     const row = [
       '',
@@ -53,7 +53,7 @@ const Import = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'template_facteurs_emissions_bilingue.csv';
+    a.download = 'template_facteurs_emissions.csv';
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -449,8 +449,7 @@ const Import = () => {
                 </div>
                 
                 <div className="mt-4 text-sm text-muted-foreground">
-                  <strong>Colonnes requises :</strong> nom, description, fe, unite, source, secteur, 
-                  categorie, localisation, date, incertitude
+                  <strong>Colonnes requises :</strong> Nom, Description, FE, "Unité donnée d'activité", Source, Secteur, Sous-secteur, Localisation, Date, Incertitude, Périmètre
                 </div>
               </CardContent>
             </Card>

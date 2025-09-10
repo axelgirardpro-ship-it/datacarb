@@ -1,0 +1,10 @@
+file:///Users/axelgirard/Eco%20Search%20Cursor%20/datacarb/scripts/algolia-replace-all.js:4
+import algoliasearch from 'algoliasearch';
+       ^^^^^^^^^^^^^
+SyntaxError: The requested module 'algoliasearch' does not provide an export named 'default'
+    at #_instantiate (node:internal/modules/esm/module_job:254:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:363:5)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:669:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.5.0

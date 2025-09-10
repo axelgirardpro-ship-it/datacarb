@@ -1,0 +1,16 @@
+→ Reprise avec staging existante: public.staging_import_1756984611
+→ Skip création/COPY (staging existante)
+→ UPSERT (session unique READ WRITE + triggers off/on)
+SET
+SET
+BEGIN
+ALTER TABLE
+NOTICE:  table "temp_full_prepared" does not exist, skipping
+DROP TABLE
+SELECT 222387
+NOTICE:  table "temp_dedup" does not exist, skipping
+DROP TABLE
+SELECT 170645
+UPDATE 0
+ERROR:  new row for relation "emission_factors" violates check constraint "emission_factors_import_type_check"
+DETAIL:  Failing row contains (65a2de3e-da80-472e-8ebd-21a8d745f7cf, null, 	Fenêtre en bois massif triple vitrage [Gestion durable] - DONN..., 1 m² de surface d’ouverture d’un bâtiment, fermée par une..., 108, m², INIES, Bâtiments et infrastructures, Menuiserie, France, 2021, null, null, 2025-09-04 11:21:31.421893+00, 2025-09-04 11:21:31.421893+00, A1-5, C1-4, null, 1 m² de surface d’ouverture d’un bâtiment, fermée par une..., 	fenêtre en bois massif triple vitrage [gestion durable] - donn..., 40627fd7-a37e-42ae-9463-0b1d3b02538a, 2025-09-04 11:21:31.421893+00, null, t, fr, bulk, 	Fenêtre en bois massif triple vitrage [Gestion durable] - DONN..., 1 m² de surface d’ouverture d’un bâtiment, fermée par une..., 1 m² de surface d’ouverture d’un bâtiment, fermée par une..., Buildings and Infrastructure, Joinery, A1-5, C1-4, France, null).

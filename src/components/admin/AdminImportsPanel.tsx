@@ -159,48 +159,7 @@ export const AdminImportsPanel: React.FC = () => {
   };
 
   const handleChunkedUpload = async () => {
-    if (!file) {
-      toast({ variant: 'destructive', title: 'Aucun fichier', description: 'Sélectionnez un fichier CSV.' });
-      return;
-    }
-    
-    const fileSizeMB = Math.round(file.size / 1024 / 1024);
-    
-    try {
-      setUploading(true);
-      setProgress(0);
-      
-      // Lancer l'orchestration côté DB (chunking différé): nécessite un file_path (après upload)
-      if (!filePath) {
-        toast({ variant: 'destructive', title: 'Chemin manquant', description: 'Veuillez d\'abord uploader le fichier (bouton Upload).' });
-        return;
-      }
-      const { data, error } = await supabase.functions.invoke('chunked-upload', {
-        body: {
-          file_path: filePath,
-          filename: file.name,
-          replace_all: replaceAll,
-          file_size: file.size,
-          language: 'fr'
-        }
-      });
-      
-      if (error) throw error;
-      
-      setProgress(100);
-      toast({ 
-        title: 'Job créé', 
-        description: `Job ${data?.job_id || ''} en file. Création des chunks et traitement en arrière-plan.`
-      });
-      
-      setAnalysisDone(false);
-      setMappingRows([]);
-      
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Erreur upload chunké', description: e.message || String(e) });
-    } finally {
-      setUploading(false);
-    }
+    toast({ variant: 'destructive', title: 'Pipeline chunké retiré', description: 'Utilisez Dataiku → staging_emission_factors → SELECT public.run_import_from_staging();' });
   };
 
   const analyzeThenImport = async () => {
@@ -309,30 +268,10 @@ export const AdminImportsPanel: React.FC = () => {
       if (inflightRef.current) return; // anti-chevauchement
       inflightRef.current = true;
       setLoadingJobs(true);
-      // Utiliser la vue public.import_status pour récupérer progress et ETA
-      const { data, error } = await (supabase as any)
-        .from('import_status')
-        .select('id,status,processed_chunks,total_chunks,progress_percent,inserted_records,total_records,created_at,finished_at,indexed_at,eta_seconds,estimated_completion_at')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      const mapped: ImportJob[] = (data || []).map((d: any) => ({
-        id: d.id,
-        status: d.status,
-        processed_chunks: d.processed_chunks ?? null,
-        total_chunks: d.total_chunks ?? null,
-        progress_percent: d.progress_percent ?? null,
-        inserted_records: d.inserted_records ?? null,
-        total_records: d.total_records ?? null,
-        created_at: d.created_at,
-        finished_at: d.finished_at ?? null,
-        indexed_at: d.indexed_at ?? null,
-        eta_seconds: d.eta_seconds ?? null,
-        estimated_completion_at: d.estimated_completion_at ?? null,
-      }));
-      setJobs(mapped);
+      // Vue legacy supprimée: on n'affiche plus l'historique ici
+      setJobs([]);
       // Suivi job actif
-      hasRunningRef.current = mapped.some((j) => j.status === 'processing' || j.status === 'queued');
+      hasRunningRef.current = false;
     } catch (e) {
       // silencieux
     } finally {
@@ -371,7 +310,7 @@ export const AdminImportsPanel: React.FC = () => {
       <CardHeader>
         <CardTitle>Import de la base de facteurs (FR/EN)</CardTitle>
         <CardDescription>
-          Architecture robuste avec Queue + Cron: Upload chunké → PGMQ → traitement automatique → Algolia
+          Nouveau flux: Dataiku → staging_emission_factors → run_import_from_staging() → projection
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -407,31 +346,23 @@ export const AdminImportsPanel: React.FC = () => {
               onChange={(e) => setFile(e.target.files?.[0] || null)} 
             />
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <Button onClick={handleChunkedUpload} disabled={!file || uploading} className="min-w-[200px]">
-                {uploading ? (<><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>Upload chunké... {progress}%</>) : (<>🚀 Upload et traitement chunké</>)}
+              <Button onClick={handleUpload} disabled={!file || uploading} className="min-w-[200px]">
+                {uploading ? (<><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>Upload... {progress}%</>) : (<>⬆️ Upload dans Storage</>)}
               </Button>
-              <div className="flex items-center gap-2 mt-2">
-                <Label className="text-sm">Remplacer intégralement (SCD2):</Label>
-                <input type="checkbox" checked={replaceAll} onChange={(e) => setReplaceAll(e.target.checked)} />
-              </div>
+              <div className="text-sm text-muted-foreground">Ensuite, exécutez dans Dataiku: SELECT public.run_import_from_staging();</div>
             </div>
           </div>
         </div>
 
-        {/* Architecture Queue + Cron - Plus d'étapes manuelles nécessaires */}
-        <div className="border rounded-lg p-4 space-y-4">
+        {/* Flux Dataiku */}
+        <div className="border rounded-lg p-4 space-y-2 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm">⚡</div>
-            <h3 className="text-lg font-semibold">Architecture automatisée</h3>
+            <h3 className="text-lg font-semibold">Flux simplifié</h3>
           </div>
-          <div className="text-sm space-y-2">
-            <div>✅ <strong>Upload chunké</strong>: Fichier découpé en chunks 5MB, parsé côté client</div>
-            <div>✅ <strong>Queue PGMQ</strong>: Chaque chunk envoyé dans csv_import_queue</div>
-            <div>✅ <strong>Cron worker</strong>: Traite 5 messages/minute via Edge Function</div>
-            <div>✅ <strong>Progress tracking</strong>: Suivi granulaire par chunk</div>
-            <div>✅ <strong>Auto-reindex</strong>: Algolia indexé automatiquement à completion</div>
-            <div>✅ <strong>Retry automatique</strong>: Échecs retentés max 3×</div>
-          </div>
+          <div>1) Upload du CSV (ou CSV.GZ) dans Storage depuis cette page</div>
+          <div>2) Dataiku: Overwrite <code className="mx-1">public.staging_emission_factors</code> puis exécuter <code className="mx-1">SELECT public.run_import_from_staging();</code></div>
+          <div>3) La projection et l’assignation des sources sont gérées en base. Le connecteur Algolia lit la projection.</div>
         </div>
 
         {/* Import + Monitoring fusionnés */}

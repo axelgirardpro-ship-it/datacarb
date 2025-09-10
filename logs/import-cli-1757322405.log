@@ -1,0 +1,57 @@
+→ Création staging: public.staging_import_1757322405 (dépend de l'en-tête du CSV)
+SET
+CREATE TABLE
+ALTER TABLE
+COPY 222387
+→ UPSERT (session unique READ WRITE + triggers off/on)
+SET
+SET
+BEGIN
+ALTER TABLE
+NOTICE:  table "temp_full_prepared" does not exist, skipping
+DROP TABLE
+SELECT 222387
+NOTICE:  table "temp_invalid" does not exist, skipping
+DROP TABLE
+SELECT 6388
+    label     | value 
+--------------+-------
+ invalid_rows |  6388
+(1 row)
+
+NOTICE:  table "temp_valid" does not exist, skipping
+DROP TABLE
+SELECT 215999
+   label    | value  
+------------+--------
+ valid_rows | 215999
+(1 row)
+
+NOTICE:  table "temp_dedup" does not exist, skipping
+DROP TABLE
+SELECT 166266
+   label    | value  
+------------+--------
+ dedup_rows | 166266
+(1 row)
+
+UPDATE 0
+NOTICE:  table "temp_dedup_seq" does not exist, skipping
+DROP TABLE
+SELECT 166266
+NOTICE:  inserted so far: 25000
+NOTICE:  inserted so far: 50000
+NOTICE:  inserted so far: 75000
+NOTICE:  inserted so far: 100000
+NOTICE:  inserted so far: 125000
+NOTICE:  inserted so far: 150000
+NOTICE:  inserted so far: 166266
+DO
+ALTER TABLE
+COMMIT
+ANALYZE
+→ Rebuild complet de la projection ef_all
+SET
+ERROR:  syntax error at or near ":"
+LINE 5:     SELECT DISTINCT "Source" FROM :staging WHERE "Source" IS...
+                                          ^

@@ -1,0 +1,37 @@
+→ Reprise avec staging existante: public.staging_import_1756984611
+→ Skip création/COPY (staging existante)
+→ UPSERT (session unique READ WRITE + triggers off/on)
+SET
+SET
+BEGIN
+ALTER TABLE
+NOTICE:  table "temp_full_prepared" does not exist, skipping
+DROP TABLE
+SELECT 222387
+NOTICE:  table "temp_invalid" does not exist, skipping
+DROP TABLE
+SELECT 6388
+    label     | value 
+--------------+-------
+ invalid_rows |  6388
+(1 row)
+
+NOTICE:  table "temp_valid" does not exist, skipping
+DROP TABLE
+SELECT 215999
+   label    | value  
+------------+--------
+ valid_rows | 215999
+(1 row)
+
+NOTICE:  table "temp_dedup" does not exist, skipping
+DROP TABLE
+SELECT 166266
+   label    | value  
+------------+--------
+ dedup_rows | 166266
+(1 row)
+
+UPDATE 166266
+ERROR:  could not extend file "base/5/81093": No space left on device
+HINT:  Check free disk space.

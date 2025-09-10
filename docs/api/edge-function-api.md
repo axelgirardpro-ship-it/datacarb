@@ -1,4 +1,6 @@
-# API Edge Function - algolia-search-proxy
+# API Edge Function - algolia-search-proxy (legacy)
+
+> Remplacé par le connecteur Supabase x Algolia lisant `public.emission_factors_all_search`. Les appels via `/functions/v1/algolia-search-proxy` ne sont plus recommandés côté admin.
 
 ## Vue d'ensemble
 
@@ -545,3 +547,47 @@ const searchDirectly = async (query: string, origin: 'public' | 'private') => {
 - Résolution workspace via `user_roles.workspace_id` (fin de dépendance à `profiles`)
 - Flow utilisateur: sync Algolia paginée + `deleteByQuery(Source)` avant réinjection
 - Flow admin: colonne `ID` devenue optionnelle dans le parser
+
+## Imports — Utilisateur (import-csv-user)
+
+### Endpoint
+
+- `https://[project-ref].supabase.co/functions/v1/import-csv-user`
+
+### Authentification
+
+- JWT Supabase requis (Authorization: Bearer <token>)
+
+### Corps de requête
+
+```json
+{
+  "file_path": "imports/mon-fichier.csv|.csv.gz|.xlsx",
+  "dataset_name": "<Nom du dataset utilisateur>",
+  "language": "fr"
+}
+```
+
+- `dataset_name` sert de `Source` pour les overlays users et d’ancre de refresh par source.
+
+### Comportement
+
+- Parse robuste (CSV/XLSX/CSV.GZ), colonnes attendues (extrait): `Nom`, `FE`, `Unité donnée d'activité`, `Source`, `Périmètre`, `Localisation`, `Date` (ID optionnel).
+- Écriture staging: insertion par lots dans `public.staging_user_imports` (1:1 colonnes texte + métas `import_id`, `workspace_id`, `dataset_name`).
+- Projection batch: `select public.prepare_user_batch_projection(workspace_id, dataset_name);` alimente `public.user_batch_algolia` uniquement pour le batch courant.
+- RunTask Algolia ciblée (EU): `select public.run_algolia_data_task_override(<task_id_users>, 'eu', workspace_id, dataset_name);` avec `parametersOverride.source.options.query` = `SELECT * FROM public.user_batch_algolia ...`.
+- Finalisation: `select public.finalize_user_import(workspace_id, dataset_name, import_id);` qui upsert dans `public.user_factor_overlays` (unicité `(workspace_id, factor_key)`) et nettoie `staging_user_imports` + `user_batch_algolia`.
+
+### Réponse
+
+```json
+{
+  "import_id": "<uuid>",
+  "processed": 1234,
+  "inserted": 1200,
+  "algolia": { /* réponse RunTask override */ },
+  "parsing_method": "robust_csv_parser",
+  "compression_supported": true,
+  "db_ms": 8452
+}
+```
