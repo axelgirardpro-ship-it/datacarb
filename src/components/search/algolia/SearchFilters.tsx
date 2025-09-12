@@ -224,6 +224,20 @@ export const SearchFilters: React.FC = () => {
         />
 
         <RefinementList
+          attribute="dataset_name"
+          title="Dataset importé"
+          searchable
+          limit={500}
+        />
+
+        <RefinementList
+          attribute="Unite_fr"
+          title="Unité"
+          searchable
+          limit={500}
+        />
+
+        <RefinementList
           attribute="Date"
           title="Date"
           limit={20}
@@ -257,12 +271,7 @@ export const SearchFilters: React.FC = () => {
           limit={500}
         />
 
-        <RefinementList
-          attribute="Unite_fr"
-          title="Unité"
-          searchable
-          limit={500}
-        />
+        {/* Unité déplacée plus haut */}
 
       </CardContent>
     </Card>

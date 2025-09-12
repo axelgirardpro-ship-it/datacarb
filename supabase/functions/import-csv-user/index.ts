@@ -129,7 +129,8 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(()=> ({})) as any
     const filePath = String(body.file_path || '')
     const language = String(body.language || 'fr')
-    const datasetName = String(body.dataset_name || '')
+    const datasetNameRaw = String(body.dataset_name || '')
+    const datasetName = datasetNameRaw.trim()
     const addToFavorites = Boolean(body.add_to_favorites === true)
 
     if (!filePath || !datasetName) return json(400, { error: 'file_path and dataset_name are required' })
@@ -249,7 +250,7 @@ Deno.serve(async (req) => {
           FE: row['FE'],
           "Unité donnée d'activité": row["Unité donnée d'activité"],
           Unite_en: row['Unite_en'] || null,
-          Source: datasetName,
+          Source: row['Source'] || null,
           Secteur: row['Secteur'] || null,
           Secteur_en: row['Secteur_en'] || null,
           "Sous-secteur": row['Sous-secteur'] || null,
@@ -321,17 +322,45 @@ Deno.serve(async (req) => {
       return json(500, { error: 'finalize_user_import failed', details: formatError(finErr) })
     }
 
-    // 4.b) Ajouter aux favoris si demandé
+    // 4.b) Ajouter aux favoris si demandé (robuste: retries jusqu'à disponibilité des object_id)
     if (addToFavorites) {
-      const { error: favErr } = await supabase.rpc('add_import_overlays_to_favorites', {
-        p_user_id: user.id,
-        p_workspace_id: userWorkspaceId,
-        p_dataset_name: datasetName
-      })
-      if (favErr) {
-        console.warn('add_import_overlays_to_favorites failed:', favErr)
-        // Non bloquant pour l'import; on journalise seulement
-        await supabase.from('audit_logs').insert({ user_id: user.id, action: 'add_import_overlays_to_favorites_error', details: { error: favErr.message, workspace_id: userWorkspaceId, dataset_name: datasetName } })
+      let inserted = 0;
+      const maxAttempts = 10;
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const { data: favResp, error: favErr } = await supabase.rpc('add_import_overlays_to_favorites', {
+          p_user_id: user.id,
+          p_workspace_id: userWorkspaceId,
+          p_dataset_name: datasetName
+        })
+        if (favErr) {
+          console.warn(`add_import_overlays_to_favorites failed (attempt ${attempt}):`, favErr)
+          await supabase.from('audit_logs').insert({ user_id: user.id, action: 'add_import_overlays_to_favorites_error', details: { error: favErr.message, workspace_id: userWorkspaceId, dataset_name: datasetName, attempt } })
+        } else {
+          inserted = Number((favResp as any)?.inserted || 0)
+          if (inserted > 0) break
+        }
+
+        // Attendre que les object_id soient présents dans le batch
+        const { count: nonNullObjCount } = await supabase
+          .from('user_batch_algolia')
+          .select('*', { count: 'exact', head: true })
+          .eq('workspace_id', userWorkspaceId)
+          .eq('dataset_name', datasetName)
+          .not('object_id', 'is', null)
+
+        if ((nonNullObjCount || 0) === 0) {
+          // object_id pas encore matérialisés, patienter
+          await new Promise(r => setTimeout(r, 500))
+          continue
+        }
+
+        // object_id présents mais insert encore 0: retenter après court délai
+        await new Promise(r => setTimeout(r, 500))
+      }
+
+      if (inserted === 0) {
+        console.warn('add_import_overlays_to_favorites failed after retries: no favorites inserted')
+        await supabase.from('audit_logs').insert({ user_id: user.id, action: 'add_import_overlays_to_favorites_final_fail', details: { workspace_id: userWorkspaceId, dataset_name: datasetName } })
       }
     }
 

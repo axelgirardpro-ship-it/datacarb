@@ -24,6 +24,7 @@ export interface AlgoliaHit {
   languages?: string[];
   workspace_id?: string;
   import_type?: string;
+  dataset_name?: string;
   __indexName?: string;
   // highlight
   _highlightResult?: any;

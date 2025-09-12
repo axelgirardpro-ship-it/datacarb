@@ -262,11 +262,12 @@ const Import = () => {
         throw new Error("Le fichier CSV est vide ou mal formaté");
       }
 
-      // Créer un dataset record
+      // Créer un dataset record (normaliser)
+      const datasetNormalized = datasetName.trim();
       const { data: dataset, error: datasetError } = await supabase
         .from('datasets')
         .insert({
-          name: datasetName,
+          name: datasetNormalized,
           file_name: fileToUpload.name,
           file_size: fileToUpload.size,
           user_id: user.id,
@@ -286,13 +287,13 @@ const Import = () => {
       try {
         await supabase
           .from('fe_sources')
-          .upsert({ source_name: dataset.name, access_level: 'standard', is_global: false }, { onConflict: 'source_name' })
+          .upsert({ source_name: datasetNormalized, access_level: 'standard', is_global: false }, { onConflict: 'source_name' })
         
         // IMPORTANT: Assigner automatiquement la source au workspace pour éviter le floutage
         await supabase
           .from('fe_source_workspace_assignments')
           .upsert({ 
-            source_name: dataset.name, 
+            source_name: datasetNormalized, 
             workspace_id: currentWorkspace.id,
             assigned_by: user.id
           }, { onConflict: 'source_name,workspace_id' })
@@ -326,7 +327,7 @@ const Import = () => {
       
       // Orchestration robuste: créer un job et déléguer (chunks+queue+cron)
       const { data: resp, error: invErr } = await supabase.functions.invoke('chunked-upload', {
-        body: { file_path: finalPath, filename: fileToUpload.name, file_size: fileToUpload.size, replace_all: true, language: 'fr', dataset_name: dataset.name, add_to_favorites: addToFavorites }
+        body: { file_path: finalPath, filename: fileToUpload.name, file_size: fileToUpload.size, replace_all: true, language: 'fr', dataset_name: datasetNormalized, add_to_favorites: addToFavorites }
       });
       if (invErr) throw invErr;
       setIndexingStatus("success");
@@ -473,6 +474,7 @@ const Import = () => {
                     placeholder="Mon dataset personnalisé"
                     value={datasetName}
                     onChange={(e) => setDatasetName(e.target.value)}
+                    onBlur={() => setDatasetName((v) => v.trim())}
                     disabled={isUploading}
                   />
                 </div>
@@ -521,63 +523,29 @@ const Import = () => {
                   </div>
                 </div>
 
-                {/* Progress Bar */}
+                {/* Message générique (remplace la barre de progression) */}
                 {isUploading && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>
-                        {importStatus === "uploading" && "Compression et lecture du fichier..."}
-                        {importStatus === "processing" && "Traitement des données..."}
-                      </span>
-                      <span>{uploadProgress}%</span>
-                    </div>
-                    <Progress value={uploadProgress} className="w-full" />
+                  <div className="p-3 rounded-lg border bg-muted/30 text-sm text-muted-foreground">
+                    Merci, votre jeu de données sera disponible dans quelques minutes.
                   </div>
                 )}
 
-                {/* Results */}
+                {/* Message générique (remplace le bloc résultats/erreurs) */}
                 {importStatus !== "idle" && (
-                  <div className={`p-4 rounded-lg ${importStatus === "success" ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
-                    {importStatus === "success" ? (
-                      <div className="flex items-center">
-                        <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-                        <span className="text-green-700">
-                          {importResults.success} facteurs d'émissions importés avec succès
-                          {compressionInfo && ` • ${compressionInfo}`}
-                        </span>
-                      </div>
-                    ) : (
-                      <div>
-                        <div className="flex items-center mb-2">
-                          <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
-                          <span className="text-red-700 font-medium">Erreurs d'import</span>
-                        </div>
-                        <ul className="text-sm text-red-600 space-y-1">
-                          {(importResults?.errors || []).map((error, index) => (
-                            <li key={index}>• {error}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                  <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                    <div className="flex items-center">
+                      <CheckCircle className="w-5 h-5 text-blue-600 mr-2" />
+                      <span className="text-blue-700">
+                        Merci, votre jeu de données sera disponible dans quelques minutes.
+                      </span>
+                    </div>
                   </div>
                 )}
 
-                {/* Indexation Algolia */}
+                {/* Message unique, pas de suivi de progression Algolia */}
                 {indexingStatus !== "idle" && (
-                  <div className="mt-3 p-3 rounded-lg border bg-muted/30">
-                    {indexingStatus === "indexing" && (
-                      <div className="text-sm text-muted-foreground">Indexation Algolia en cours…</div>
-                    )}
-                    {indexingStatus === "success" && (
-                      <div className="flex items-center text-sm text-green-700">
-                        <CheckCircle className="w-4 h-4 mr-2" /> Indexation Algolia terminée
-                      </div>
-                    )}
-                    {indexingStatus === "error" && (
-                      <div className="flex items-center text-sm text-red-700">
-                        <AlertCircle className="w-4 h-4 mr-2" /> Échec de l'indexation Algolia (non bloquant)
-                      </div>
-                    )}
+                  <div className="mt-3 p-3 rounded-lg border bg-muted/30 text-sm text-muted-foreground">
+                    Merci, votre jeu de données sera disponible dans quelques minutes.
                   </div>
                 )}
 

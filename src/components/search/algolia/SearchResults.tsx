@@ -681,6 +681,12 @@ export const SearchResults: React.FC = () => {
                                   <p className="text-sm font-medium text-foreground" dangerouslySetInnerHTML={getHighlightedText(hit as any, 'Source')} />
                                 </div>
                               </div>
+                              {(hit as any).dataset_name && (
+                                <div>
+                                  <span className="text-sm font-semibold text-foreground">Dataset importé</span>
+                                  <p className="text-sm font-light">{(hit as any).dataset_name}</p>
+                                </div>
+                              )}
                           </div>
                         </div>
 
