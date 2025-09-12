@@ -382,6 +382,12 @@ export const FavorisSearchResults: React.FC<FavorisSearchResultsProps> = ({
                               <p className="text-sm font-light"><Highlight hit={hit as any} attribute={'Source' as any} /></p>
                             </div>
                           </div>
+                          {(hit as any).dataset_name && (
+                            <div>
+                              <span className="text-sm font-semibold text-foreground">Dataset importé</span>
+                              <p className="text-sm font-light">{(hit as any).dataset_name}</p>
+                            </div>
+                          )}
                         </div>
                       </div>
 

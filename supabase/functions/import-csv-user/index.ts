@@ -129,7 +129,8 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(()=> ({})) as any
     const filePath = String(body.file_path || '')
     const language = String(body.language || 'fr')
-    const datasetName = String(body.dataset_name || '')
+    const datasetNameRaw = String(body.dataset_name || '')
+    const datasetName = datasetNameRaw.trim()
     const addToFavorites = Boolean(body.add_to_favorites === true)
 
     if (!filePath || !datasetName) return json(400, { error: 'file_path and dataset_name are required' })
@@ -249,7 +250,7 @@ Deno.serve(async (req) => {
           FE: row['FE'],
           "Unité donnée d'activité": row["Unité donnée d'activité"],
           Unite_en: row['Unite_en'] || null,
-          Source: datasetName,
+          Source: row['Source'] || null,
           Secteur: row['Secteur'] || null,
           Secteur_en: row['Secteur_en'] || null,
           "Sous-secteur": row['Sous-secteur'] || null,
@@ -323,7 +324,7 @@ Deno.serve(async (req) => {
 
     // 4.b) Ajouter aux favoris si demandé
     if (addToFavorites) {
-      const { error: favErr } = await supabase.rpc('add_import_overlays_to_favorites', {
+      const { data: favResp, error: favErr } = await supabase.rpc('add_import_overlays_to_favorites', {
         p_user_id: user.id,
         p_workspace_id: userWorkspaceId,
         p_dataset_name: datasetName
@@ -332,6 +333,17 @@ Deno.serve(async (req) => {
         console.warn('add_import_overlays_to_favorites failed:', favErr)
         // Non bloquant pour l'import; on journalise seulement
         await supabase.from('audit_logs').insert({ user_id: user.id, action: 'add_import_overlays_to_favorites_error', details: { error: favErr.message, workspace_id: userWorkspaceId, dataset_name: datasetName } })
+      } else if (!favResp || (favResp as any).inserted === 0) {
+        // Retry soft si batch présent mais 0 insert (ex: espaces ou latence)
+        const { count } = await supabase.from('user_batch_algolia').select('*', { count: 'exact', head: true })
+        if ((count || 0) > 0) {
+          await new Promise(r => setTimeout(r, 300));
+          await supabase.rpc('add_import_overlays_to_favorites', {
+            p_user_id: user.id,
+            p_workspace_id: userWorkspaceId,
+            p_dataset_name: datasetName
+          })
+        }
       }
     }
 
